@@ -81,12 +81,14 @@ def loop():
     httpd.serve_forever()
 
 if __name__ == '__main__':
-    mdx_file = 'data/longman6.mdx'
+    # ✅ 直接指定 mdx 文件路径，服务器上默认这个，不弹窗
+    mdx_file = os.path.join('data', 'longman6.mdx')
+
     if not os.path.exists(mdx_file):
-        print(f"Cannot find mdx file: {mdx_file}")
+        print(f"ERROR: Cannot find mdx file: {mdx_file}")
         sys.exit(1)
 
     builder = IndexBuilder(mdx_file)
 
-    t = threading.Thread(target=loop)
-    t.start()
+    # ✅ 直接启动 HTTP 服务
+    loop()
