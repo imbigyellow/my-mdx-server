@@ -1,19 +1,10 @@
 # -*- coding: utf-8 -*-
-# version: python 3.5
+# version: python 3.5+
 
 import threading
 import re
 import os
 import sys
-
-
-if sys.version_info < (3, 0, 0):
-    import Tkinter as tk
-    import tkFileDialog as filedialog
-else:
-    import tkinter as tk
-    import tkinter.filedialog as filedialog
-
 from wsgiref.simple_server import make_server
 from file_util import *
 from mdx_util import *
@@ -45,22 +36,18 @@ content_type_map = {
 }
 
 try:
-    # PyInstaller creates a temp folder and stores path in _MEIPASS
-    #base_path = sys._MEIPASS
     base_path = os.path.dirname(sys.executable)
 except Exception:
     base_path = os.path.abspath(".")
-        
-resource_path = os.path.join(base_path, 'mdx')
-print("resouce path : " + resource_path)
-builder = None
 
+resource_path = os.path.join(base_path, 'mdx')
+print("Resource path:", resource_path)
+
+builder = None
 
 def get_url_map():
     result = {}
     files = []
-
-    # resource_path = '/mdx'
     file_util_get_files(resource_path, files)
     for p in files:
         if file_util_get_ext(p) in content_type_map:
@@ -68,14 +55,11 @@ def get_url_map():
             result[re.match('.*?/mdx(/.*)', p).groups()[0]] = p
     return result
 
-
 def application(environ, start_response):
     path_info = environ['PATH_INFO'].encode('iso8859-1').decode('utf-8')
-    print(path_info)
+    print("Request path:", path_info)
     m = re.match('/(.*)', path_info)
-    word = ''
-    if m is not None:
-        word = m.groups()[0]
+    word = m.groups()[0] if m else ''
 
     url_map = get_url_map()
 
@@ -92,35 +76,18 @@ def application(environ, start_response):
         start_response('200 OK', [('Content-Type', 'text/html; charset=utf-8')])
         return get_definition_mdx(path_info[1:], builder)
 
-
-    start_response('200 OK', [('Content-Type', 'text/html; charset=utf-8')])
-    return [b'<h1>WSGIServer ok!</h1>']
-
-
-# 新线程执行的代码
 def loop():
-    # 创建一个服务器，IP地址为空，端口是8000，处理函数是application:
     httpd = make_server('', 8000, application)
     print("Serving HTTP on port 8000...")
-    # 开始监听HTTP请求:
     httpd.serve_forever()
 
-
 if __name__ == '__main__':
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument("filename", nargs='?', help="mdx file name")
-    args = parser.parse_args()
+    mdx_file = 'data/longman6.mdx'
+    if not os.path.exists(mdx_file):
+        print(f"Cannot find mdx file: {mdx_file}")
+        sys.exit(1)
 
-    # use GUI to select file, default to extract
-    if not args.filename:
-        root = tk.Tk()
-        root.withdraw()
-        args.filename = filedialog.askopenfilename(parent=root)
+    builder = IndexBuilder(mdx_file)
 
-    if not os.path.exists(args.filename):
-        print("Please specify a valid MDX/MDD file")
-    else:
-        builder = IndexBuilder(args.filename)
-        t = threading.Thread(target=loop, args=())
-        t.start()
+    t = threading.Thread(target=loop)
+    t.start()
