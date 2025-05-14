@@ -1,17 +1,21 @@
-FROM python:3.10-slim
+# 选 slim 体积小、启动快
+FROM python:3.11-slim
 
-# 设置工作目录
 WORKDIR /app
 
-# 安装依赖
-COPY requirements.txt /app/
+# 系统级依赖（mdict-query 需要 lxml、python-magic）
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      build-essential libmagic1 \
+ && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 拷贝代码
-COPY . /app
+# 复制源码
+COPY server.py .
+COPY static ./static        # 没用到可删
+COPY data   /data
 
-# 暴露端口
 EXPOSE 8000
-
-# 启动服务
-CMD ["python", "mdx_server.py"]
+CMD ["python", "server.py"]
