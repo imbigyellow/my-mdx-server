@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-
 import threading
 import re
 import os
 import sys
+
 from wsgiref.simple_server import make_server
 from file_util import *
 from mdx_util import *
@@ -34,14 +34,8 @@ content_type_map = {
     'woff2': 'application/font-woff2',
 }
 
-try:
-    base_path = os.path.dirname(sys.executable)
-except Exception:
-    base_path = os.path.abspath(".")
-
-resource_path = os.path.join(base_path, 'mdx')
-print("Resource path:", resource_path)
-
+resource_path = os.path.join(os.path.abspath("."), 'mdx')
+print("resource path: " + resource_path)
 builder = None
 
 def get_url_map():
@@ -56,9 +50,11 @@ def get_url_map():
 
 def application(environ, start_response):
     path_info = environ['PATH_INFO'].encode('iso8859-1').decode('utf-8')
-    print("Request path:", path_info)
+    print(path_info)
     m = re.match('/(.*)', path_info)
-    word = m.groups()[0] if m else ''
+    word = ''
+    if m is not None:
+        word = m.groups()[0]
 
     url_map = get_url_map()
 
@@ -81,14 +77,12 @@ def loop():
     httpd.serve_forever()
 
 if __name__ == '__main__':
-    # ✅ 直接指定 mdx 文件路径，服务器上默认这个，不弹窗
-    mdx_file = os.path.join('data', 'longman6.mdx')
-
-    if not os.path.exists(mdx_file):
-        print(f"ERROR: Cannot find mdx file: {mdx_file}")
+    # 直接用默认路径，不用tk选文件
+    filename = os.path.join(os.path.abspath("./data"), "longman6.mdx")
+    if not os.path.exists(filename):
+        print("Dictionary file not found:", filename)
         sys.exit(1)
 
-    builder = IndexBuilder(mdx_file)
-
-    # ✅ 直接启动 HTTP 服务
-    loop()
+    builder = IndexBuilder(filename)
+    t = threading.Thread(target=loop)
+    t.start()
