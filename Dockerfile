@@ -14,4 +14,4 @@ COPY . /app
 EXPOSE 8000
 
 # 启动服务
-CMD ["uvicorn", "mdx_server:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "mdx_server.py"]
